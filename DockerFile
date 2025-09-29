@@ -1,0 +1,27 @@
+# Use an official Java runtime as a parent image
+FROM eclipse-temurin:17-jdk-alpine
+
+# Set working directory inside the container
+WORKDIR /app
+
+# Copy Gradle wrapper and build files first (caching)
+COPY gradlew .
+COPY gradle/ gradle/
+COPY build.gradle .
+COPY settings.gradle .
+
+# Download dependencies
+RUN ./gradlew build -x test --stacktrace || return 0
+
+# Copy the rest of the project
+COPY . .
+
+# Build the JAR
+RUN ./gradlew bootJar --stacktrace
+
+# Expose port from Render
+ENV PORT 10000
+EXPOSE $PORT
+
+# Run the app
+CMD java -Dserver.port=$PORT -jar build/libs/knitCalculatorDemo-1.0-SNAPSHOT.jar
